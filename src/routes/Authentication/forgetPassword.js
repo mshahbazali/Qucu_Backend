@@ -2,81 +2,42 @@ const express = require("express")
 const router = new express.Router();
 const { authSchema } = require('../../moduls/auth')
 const bcrypt = require('bcrypt')
-const nodemailer = require("nodemailer");
-const hbs = require('nodemailer-express-handlebars')
-const path = require('path');
-
-// Data Create 
-
-// async function main(email, otp) {
-//     let transporter = nodemailer.createTransport({
-//         service: "gmail",
-//         host: "smtp.gmail.com",
-//         auth: {
-//             user: "freecodestore854@gmail.com",
-//             pass: "ShahbazAli8520123@",
-//         },
-//     });
-//     const handlebarOptions = {
-//         viewEngine: {
-//             partialsDir: path.resolve('././src/views/'),
-//             defaultLayout: false,
-//         },
-//         viewPath: path.resolve('././src/views/'),
-//     };
-//     transporter.use('compile', hbs(handlebarOptions))
-//     let info = await transporter.sendMail({
-//         from: '"WebixNow" <freecodestore854@gmail.com>', // sender address
-//         to: email, // list of receivers
-//         subject: "One Time Password", // Subject line
-//         text: "OTP",
-//         template: 'index', // the name of the template file i.e email.handlebars
-//         context: {
-//             otp: otp, // replace {{name}} with Adebola
-//             style: "././src/views/style.css",
-//         }
-
-//     });
-//     console.log("Message sent: %s", info.messageId);
-//     // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-//     // Preview only available when sending through an Ethereal account
-//     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-//     // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-// }
-
-
-router.post("/forget-password", async (req, res) => {
+const accountSid = process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_TOKEN;
+const authPhoneNumber = process.env.TWILIO_PHONENUMBER;
+const client = require('twilio')(accountSid, authToken);
+router.post("/forgotpassword", async (req, res) => {
     try {
-        const email = req.body.email
-        authSchema.find({ email: email })
+        const phoneNumber = req.body.identifier
+        authSchema.findOne({ phoneNumber: phoneNumber })
             .exec()
             .then(async (user) => {
                 if (user.length < 1) {
-                    res.status(404).send({
-                        massage: "User Not Found"
+                    res.status(202).send({
+                        massage: "Please enter valid mobile number"
                     })
                 }
                 else {
                     const _id = user[0]._id.toString();
-                    const otp = Math.floor(Math.random() * 972) * 634;
-                    await main(user[0].email, otp).catch("error").then(async () => {
-                        req.body.otp = otp;
+                    const otp = Math.floor(Math.random() * 92) * 64;
+                    req.body.otp = otp;
+                    const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
+                        new: true
+                    })
+                    client.messages
+                        .create({
+                            to: phoneNumber,
+                            from: authPhoneNumber,
+                            body: `Your QUCU verification code is: ${otp}`,
+                        })
+                        .then(message => console.log(message.sid)).catch((err) => console.log(err))
+                    setTimeout(async () => {
+                        req.body.otp = null;
                         const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
                             new: true
                         })
-                        setTimeout(async () => {
-                            req.body.otp = null;
-                            const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
-                                new: true
-                            })
-                            console.log("OK")
-                            res.status(202).send(updateauth)
-                        }, 120000);
-                    })
-                        .catch((e) => {
-                            console.log(e)
-                        })
+                    }, 300000);
+
                 }
             })
             .catch(e => {
@@ -89,10 +50,26 @@ router.post("/forget-password", async (req, res) => {
         res.status(400).send(e)
     }
 })
+router.post("/verify", async (req, res) => {
+    try {
+        let user = await authSchema.findOne({ otp: req.body.otp });
+        if (!user) {
+            return res.status(202).send({ message: 'Your One Time Verification Code is Invalid' });
+        } else {
+            res.status(202).send({
+                id: user[0]._id,
+                message: "One Time Verification Code Successfully Verified"
+            })
+        }
+
+    }
+    catch (err) {
+        res.status(202).send({ message: "Please fill valid information" })
+    }
+})
 router.post("/reset-password", async (req, res) => {
     try {
-        const userOtp = req.body.otp
-        authSchema.find({ otp: userOtp })
+        authSchema.findById({ _id: req.body.id })
             .exec()
             .then(async (user) => {
                 if (user.length < 1) {
@@ -101,22 +78,16 @@ router.post("/reset-password", async (req, res) => {
                     })
                 }
                 else {
-                    if (req.body.otp == user[0].otp) {
+                    const _id = req.body.id
+                    const securePass = await bcrypt.hash(req.body.password, 10);
+                    req.body.password = securePass
+                    const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
+                        new: true
+                    }).then(() => {
                         res.status(201).send({
-                            massage: "User OTP SUCCESS"
+                            message: "Your password successfully reset",
                         })
-                        const _id = user[0]._id.toString();
-                        const securePass = await bcrypt.hash(req.body.password, 10);
-                        req.body.password = securePass
-                        const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
-                            new: true
-                        })
-                        // res.status(201).send(updateauth)
-
-                    }
-                    else {
-                        console.log("sorry")
-                    }
+                    })
                 }
             })
             .catch(e => {

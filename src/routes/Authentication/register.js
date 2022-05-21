@@ -1,35 +1,11 @@
 const express = require("express")
 const router = new express.Router();
 const { authSchema } = require('../../moduls/auth')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
 const accountSid = process.env.TWILIO_SID;
 const authToken = process.env.TWILIO_TOKEN;
 const authPhoneNumber = process.env.TWILIO_PHONENUMBER;
 const client = require('twilio')(accountSid, authToken);
-// Data Create 
-// const DIR = './public/';
-
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, DIR);
-//     },
-//     filename: (req, file, cb) => {
-//         const fileName = file.originalname.toLowerCase().split(' ').join('-');
-//         cb(null, uuidv4() + '-' + fileName)
-//     }
-// });
-
-// var upload = multer({
-//     storage: storage,
-//     fileFilter: (req, file, cb) => {
-//         if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
-//             cb(null, true);
-//         } else {
-//             cb(null, false);
-//             return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
-//         }
-//     }
-// });
 
 router.post("/", async (req, res) => {
     try {
@@ -41,6 +17,7 @@ router.post("/", async (req, res) => {
             const otp = Math.floor(Math.random() * 72) * 34;
             req.body.password = securePass
             req.body.otp = otp
+            req.body.verify = "false"
             client.messages
                 .create({
                     to: req.body.phoneNumber,
@@ -69,8 +46,13 @@ router.post("/verify", async (req, res) => {
     try {
         let user = await authSchema.findOne({ otp: req.body.otp });
         if (!user) {
-            return res.status(202).send({ message: 'Your One Time Verification is Invalid' });
+            return res.status(202).send({ message: 'Your One Time Verification Code is Invalid' });
         } else {
+            const _id = user[0]._id
+            req.body.verify = "true";
+            const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
+                new: true
+            })
             res.status(202).send({ message: "Your account was created successfully!" })
         }
 
@@ -79,28 +61,6 @@ router.post("/verify", async (req, res) => {
         res.status(202).send({ message: "Please fill valid information" })
     }
 })
-
-
-
-// router.post("/", upload.single('profileImg'), async (req, res) => {
-//     try {
-//         const securePass = await bcrypt.hash(req.body.password, 10)
-//         const url = req.protocol + '://' + req.get('host')
-//         const token = jwt.sign({ email: req.body.email }, req.body.email, { expiresIn: "10h" })
-//         req.body.token = token
-//         req.body.password = securePass
-//         req.body.country = { a: '' }
-//         req.body.profileImg = url + '/public/' + req.file.filename
-//         const addauth = new auth(req.body)
-//         addauth.save()
-//         res.status(201).send(req.body)
-//     }
-//     catch (err) {
-//         console.log(err)
-//     }
-//     // console.log(securePass)
-// })
-// Data Read 
 
 router.get("/:id", async (req, res) => {
     try {
