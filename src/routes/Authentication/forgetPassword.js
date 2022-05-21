@@ -69,7 +69,7 @@ router.post("/resetpassword", async (req, res) => {
     try {
         let user = await authSchema.findOne({ _id: req.body.id });
         if (user == null) {
-            res.status(404).send({
+            res.status(202).send({
                 massage: "User Not Found"
             })
         }
