@@ -2,9 +2,9 @@ const express = require("express")
 const router = new express.Router();
 const { authSchema } = require('../../moduls/auth')
 const bcrypt = require('bcrypt');
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
-const authPhoneNumber = process.env.TWILIO_PHONENUMBER;
+const accountSid = "ACb6fb8253fb7d40091b2900d74907b33e";
+const authToken = "fc1fff0d78092aebde9de442b1fc40e2";
+const authPhoneNumber = "+19403735129";
 const client = require('twilio')(accountSid, authToken);
 
 router.post("/", async (req, res) => {
