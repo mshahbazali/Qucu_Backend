@@ -11,7 +11,6 @@ const client = require('twilio')(accountSid, authToken);
 router.post("/forgotpassword", async (req, res) => {
     try {
         let user = await authSchema.findOne({ phoneNumber: req.body.identifier });
-        console.log(user);
         if (user == null) {
             res.status(202).send({
                 massage: "Please enter valid mobile number"
@@ -33,7 +32,10 @@ router.post("/forgotpassword", async (req, res) => {
                 .then(message => {
                     res.status(400).send({ message: "Otp Sended" })
                 }).catch((err) => console.log(err))
-            res.status(202).send(updateauth)
+            res.status(202).send({
+                message: "Mobile number is valid",
+                user: updateauth
+            })
             setTimeout(async () => {
                 req.body.otp = null;
                 const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
