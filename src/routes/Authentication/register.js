@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
             return res.status(202).send({ message: 'Your phone number is already registered' });
         } else {
             const securePass = await bcrypt.hash(req.body.password, 10)
-            const otp = Math.floor(Math.random() * 72) * 34;
+            const otp = Math.floor(1000 + Math.random() * 9000);
             req.body.password = securePass
             req.body.otp = otp
             req.body.verify = "false"

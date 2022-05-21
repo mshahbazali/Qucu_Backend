@@ -18,7 +18,7 @@ router.post("/forgotpassword", async (req, res) => {
         }
         else {
             const _id = user._id.toString();
-            const otp = Math.floor(Math.random() * 92) * 64;
+            const otp = Math.floor(1000 + Math.random() * 9000);
             req.body.otp = otp;
             const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
                 new: true
@@ -30,7 +30,7 @@ router.post("/forgotpassword", async (req, res) => {
                     body: `Your QUCU verification code is: ${otp}`,
                 })
                 .then(message => {
-                    res.status(400).send({ message: "Otp Sended" })
+                    res.status(202).send({ message: "Otp Sended" })
                 }).catch((err) => console.log(err))
             res.status(202).send({
                 message: "Mobile number is valid",
@@ -65,9 +65,9 @@ router.post("/verify", async (req, res) => {
         res.status(202).send({ message: "Please fill valid information" })
     }
 })
-router.post("/reset-password", async (req, res) => {
+router.post("/resetpassword", async (req, res) => {
     try {
-        let user = await authSchema.findOne({ _id: req.body.otp });
+        let user = await authSchema.findOne({ _id: req.body.id });
         if (user == null) {
             res.status(404).send({
                 massage: "User Not Found"
