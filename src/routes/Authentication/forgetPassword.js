@@ -30,7 +30,9 @@ router.post("/forgotpassword", async (req, res) => {
                     from: authPhoneNumber,
                     body: `Your QUCU verification code is: ${otp}`,
                 })
-                .then(message => console.log(message.sid)).catch((err) => console.log(err))
+                .then(message => {
+                    res.status(400).send({ message: "Otp Sended" })
+                }).catch((err) => console.log(err))
             res.status(202).send(updateauth)
             setTimeout(async () => {
                 req.body.otp = null;
