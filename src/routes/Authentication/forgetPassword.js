@@ -51,7 +51,7 @@ router.post("/verify", async (req, res) => {
             return res.status(202).send({ message: 'Your One Time Verification Code is Invalid' });
         } else {
             res.status(202).send({
-                id: user[0]._id,
+                id: user._id.toString(),
                 message: "One Time Verification Code Successfully Verified"
             })
         }
