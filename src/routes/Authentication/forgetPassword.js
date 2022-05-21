@@ -24,14 +24,14 @@ router.post("/forgotpassword", async (req, res) => {
             const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
                 new: true
             })
-            res.status(202).send(updateauth)
             client.messages
                 .create({
-                    to: phoneNumber,
+                    to: req.body.identifier,
                     from: authPhoneNumber,
                     body: `Your QUCU verification code is: ${otp}`,
                 })
                 .then(message => console.log(message.sid)).catch((err) => console.log(err))
+            res.status(202).send(updateauth)
             setTimeout(async () => {
                 req.body.otp = null;
                 const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
