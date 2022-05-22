@@ -32,7 +32,10 @@ router.post("/", async (req, res) => {
             }, 300000);
             const addauth = new authSchema(req.body)
             addauth.save()
-            res.status(202).send({ message: "One Time Verification Code Sended" })
+            res.status(202).send({
+                message: "One Time Verification Code Sended",
+                user: addauth
+            })
         }
 
     }
@@ -48,7 +51,7 @@ router.post("/verify", async (req, res) => {
         if (!user) {
             return res.status(202).send({ message: 'Your One Time Verification Code is Invalid' });
         } else {
-            const _id = user[0]._id
+            const _id = user._id
             req.body.verify = "true";
             const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
                 new: true
@@ -56,6 +59,32 @@ router.post("/verify", async (req, res) => {
             res.status(202).send({ message: "Your account was created successfully!" })
         }
 
+    }
+    catch (err) {
+        res.status(202).send({ message: "Please fill valid information" })
+    }
+})
+router.post("/resend", async (req, res) => {
+    try {
+        let user = await authSchema.findOne({ id: req.body.id });
+        if (!user) {
+            return res.status(202).send({ message: 'User Not Found' });
+        } else {
+            const _id = user._id
+            const otp = Math.floor(1000 + Math.random() * 9000);
+            req.body.otp = otp
+            client.messages
+                .create({
+                    to: req.body.phoneNumber,
+                    from: authPhoneNumber,
+                    body: `Your QUCU verification code is: ${otp}`,
+                })
+                .then(message => console.log(message.sid)).catch((err) => console.log(err))
+            const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
+                new: true
+            })
+            res.status(202).send({ message: "Otp Send Sucessfully" })
+        }
     }
     catch (err) {
         res.status(202).send({ message: "Please fill valid information" })

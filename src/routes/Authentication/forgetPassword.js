@@ -91,6 +91,32 @@ router.post("/resetpassword", async (req, res) => {
     }
 })
 
+router.post("/resend", async (req, res) => {
+    try {
+        let user = await authSchema.findOne({ id: req.body.id });
+        if (!user) {
+            return res.status(202).send({ message: 'User Not Found' });
+        } else {
+            const _id = user._id
+            const otp = Math.floor(1000 + Math.random() * 9000);
+            req.body.otp = otp
+            client.messages
+                .create({
+                    to: req.body.phoneNumber,
+                    from: authPhoneNumber,
+                    body: `Your QUCU verification code is: ${otp}`,
+                })
+                .then(message => console.log(message.sid)).catch((err) => console.log(err))
+            const updateauth = await authSchema.findByIdAndUpdate(_id, req.body, {
+                new: true
+            })
+            res.status(202).send({ message: "Otp Send Sucessfully" })
+        }
+    }
+    catch (err) {
+        res.status(202).send({ message: "Please fill valid information" })
+    }
+})
 // Data Read 
 
 router.get("/", async (req, res) => {
